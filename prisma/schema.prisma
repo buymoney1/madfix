@@ -1,0 +1,412 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ===================================================================
+// ==================== ENUMS ========================================
+// ===================================================================
+
+enum OTPType {
+  LOGIN
+  REGISTER
+  FORGOT_PASSWORD
+}
+
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+  OTP
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  TEACHER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+  PENDING
+}
+
+enum ArticleStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RepairStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DeviceType {
+  PHONE
+  TABLET
+  LAPTOP
+  DESKTOP
+  OTHER
+}
+
+// ===================================================================
+// ==================== AUTH / USER MODELS ===========================
+// ===================================================================
+
+model User {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+
+  // اطلاعات پایه
+  name          String?
+  family        String?
+  phone         String?    @unique
+  email         String?    @unique
+  image         String?
+  passwordHash  String?    // null برای کاربران گوگل/OTP
+
+  // وضعیت و نقش
+  role          UserRole   @default(USER)
+  status        UserStatus @default(ACTIVE)
+  phoneVerified Boolean    @default(false)
+  emailVerified DateTime?
+
+  // اطلاعات پروفایل
+  bio           String?
+  birthDate     DateTime?
+  avatar        String?
+
+  // سیستم معرف (Referral)
+  referralCode      String?   @unique
+  referredById      String?   @db.ObjectId
+  referredBy        User?     @relation("UserReferrals", fields: [referredById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  referrals         User[]    @relation("UserReferrals")
+
+  // NextAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // OTP
+  otps          OTP[]
+
+  // بازیابی رمز
+  passwordResets PasswordReset[]
+
+  // SEO
+  seoArticles       SeoArticle[]
+  seoArticleViews   SeoArticleView[]
+  articlePrompts    ArticlePrompt[]
+  cronJobLogs       CronJobLog[]
+
+  // درخواست تعمیر
+  repairRequests    RepairRequest[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  lastLoginAt   DateTime?
+
+  @@index([referredById])
+  @@index([role])
+  @@index([status])
+}
+
+// ==================== NextAuth Models ====================
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==================== OTP ====================
+
+model OTP {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  phone      String
+  code       String
+  type       OTPType  @default(LOGIN)
+
+  attempts    Int     @default(0)
+  resendCount Int     @default(0)
+
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  userId     String?  @db.ObjectId
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@index([phone, type])
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+// ==================== Password Reset ====================
+
+model PasswordReset {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  resetToken String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ==================== Referral Reward (اختیاری) ====================
+
+model ReferralReward {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  referrerId String   @db.ObjectId
+  referredId String   @db.ObjectId
+  amount     Int      @default(0)
+  status     String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  reason     String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([referrerId, referredId])
+  @@index([referrerId])
+  @@index([referredId])
+}
+
+// ===================================================================
+// ==================== REPAIR REQUEST ===============================
+// ===================================================================
+
+model RepairRequest {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  name        String
+  phone       String
+  deviceType  String        // یا DeviceType اگر enum کنی
+  problem     String
+
+  brand       String?
+  model       String?
+  description String?
+  address     String?
+  email       String?
+
+  status      RepairStatus @default(PENDING)
+
+  userId      String?      @db.ObjectId
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("repair_requests")
+}
+
+// ===================================================================
+// ==================== LANDING SITE MODELS ==========================
+// ===================================================================
+
+// ==================== Pre-Registration ====================
+
+model PreRegistration {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  username      String   @unique
+  phone         String   @unique
+  referralCode  String?
+  queuePosition Int      @default(0)
+  priorityScore Int      @default(0)
+  referralCount Int      @default(0)
+  status        String   @default("pending")
+  cardGenerated Boolean  @default(false)
+  cardUrl       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([referralCode])
+  @@index([status])
+  @@index([queuePosition])
+  @@map("preregistrations")
+}
+
+// ==================== SEO Article Models ====================
+
+model ArticlePrompt {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  prompt      String
+  category    String?
+  isActive    Boolean   @default(true)
+
+  articles    SeoArticle[]
+
+  createdBy   String?   @db.ObjectId
+  creator     User?     @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("article_prompts")
+}
+
+model SeoArticle {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  slug            String        @unique
+  metaTitle       String?
+  metaDescription String?
+  ogTitle         String?
+  ogDescription   String?
+  ogImage         String?
+  content         String
+  excerpt         String?
+  coverImage      String?
+  keywords        String[]
+  tags            String[]
+  category        String?
+  readingTime     Int?
+  wordCount       Int?
+
+  // AI metadata
+  modelUsed       String?
+  researchData    Json?
+
+  promptId        String?       @db.ObjectId
+  prompt          ArticlePrompt? @relation(fields: [promptId], references: [id], onDelete: SetNull)
+
+  authorId        String?       @db.ObjectId
+  author          User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  isPublished     Boolean       @default(false)
+  isIndexed       Boolean       @default(true)
+  status          ArticleStatus @default(DRAFT)
+  canonicalUrl    String?
+  schemaMarkup    Json?
+  viewCount       Int           @default(0)
+  publishedAt     DateTime?
+
+  views           SeoArticleView[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([isPublished])
+  @@index([status, isPublished])
+  @@index([publishedAt(sort: Desc)])
+  @@index([category])
+  @@index([keywords])
+  @@index([authorId])
+  @@index([promptId])
+  @@map("seo_articles")
+}
+
+model SeoArticleView {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  articleId String     @db.ObjectId
+  article   SeoArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId    String?    @db.ObjectId
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userAgent String?
+  ipAddress String?
+  referrer  String?
+  country   String?
+  createdAt DateTime   @default(now())
+
+  @@index([articleId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("seo_article_views")
+}
+
+// ==================== Cron Job Log ====================
+
+model CronJobLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  jobName     String
+  status      String
+  details     String?
+  error       String?
+  startedAt   DateTime
+  completedAt DateTime?
+  createdBy   String?  @db.ObjectId
+  user        User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+
+  @@index([jobName])
+  @@index([status])
+  @@index([startedAt(sort: Desc)])
+  @@map("cron_job_logs")
+}
+
+model KeywordPool {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String            // اسم گروه: "آموزشگاه‌های آیلتس شیراز"
+  keywords    String[]          // کلیدواژه‌های این گروه
+  category    String?           // دسته‌بندی اصلی
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([category])
+  @@map("keyword_pools")
+}
