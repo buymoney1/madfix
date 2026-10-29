@@ -225,7 +225,7 @@ export default function HomePage() {
                 تخصصی تعمیر
                 <DecorativeLine className="absolute -bottom-1 sm:-bottom-2 lg:-bottom-3 right-0 text-[#FF5722] w-10 sm:w-14 lg:w-20 hidden xs:block" delay={0.8} />
               </span>{" "}
-              می‌شود
+          می‌شه
             </span>
           </h1>
 
@@ -235,7 +235,7 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="text-[#1A1410]/65 text-sm sm:text-base md:text-lg leading-relaxed max-w-md md:max-w-lg font-medium mb-2 px-2"
           >
-            عیب‌یابی دقیق، تعمیر حرفه‌ای و بازیابی اطلاعات — با ضمانت و شفافیت کامل
+            عیب‌یابی دقیق، تعمیر حرفه‌ای و بازیابی اطلاعات — با شفافیت کامل
           </motion.p>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -344,7 +344,7 @@ export default function HomePage() {
             تعمیر تخصصی، بدون ریسک
           </h2>
           <p className="text-[#1A1410]/55 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed px-4">
-            لپ‌تاپ، کامپیوتر و هاردت را به دست متخصص بسپار — با ضمانت تعمیر
+       لپ‌تاپ، کامپیوتر و هاردت را به دست متخصص بسپار 
           </p>
           <DecorativeLine className="mx-auto mt-4 sm:mt-5 text-[#FFA000]/50" delay={0.3} />
         </div>
