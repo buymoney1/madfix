@@ -593,7 +593,7 @@ export default function HomePage() {
           درخواست عیب‌یابی رایگان بده و دستگاهت را به متخصصان مدفیکس شیراز بسپار
         </p>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-sm sm:max-w-none mx-auto">
-          <PrimaryCTA label="درخواست عیب‌یابی رایگان" size="lg" href="/request" />
+          <PrimaryCTA label="درخواست عیب‌یابی رایگان" size="lg" href="/requests" />
           <Link
             href="/estimate"
             className="inline-flex items-center justify-center gap-2 border border-[#FF5722]/40 hover:border-[#FF5722] hover:bg-[#FF5722]/8 text-[#FF5722] rounded-full font-bold transition-all px-5 sm:px-6 py-3.5 text-sm w-full sm:w-auto whitespace-nowrap"
@@ -624,7 +624,7 @@ export default function HomePage() {
           <span className="w-px h-3 bg-[#1A1410]/15" />
           <Link href="/estimate" className="hover:text-[#FF5722] transition-colors">تخمین هزینه</Link>
           <span className="w-px h-3 bg-[#1A1410]/15" />
-          <Link href="/request" className="hover:text-[#FF5722] transition-colors">درخواست تعمیر</Link>
+          <Link href="/requests" className="hover:text-[#FF5722] transition-colors">درخواست تعمیر</Link>
         </div>
       </footer>
     </div>

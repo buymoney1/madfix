@@ -1,16 +1,19 @@
 // src/app/estimate/page.tsx
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import {
   Laptop, Monitor, Apple, Wrench, ArrowRight, ArrowLeft,
   CheckCircle2, AlertCircle, Sparkles, Info, TrendingUp, ShieldCheck,
+  User, Phone, Send, Loader2, ClipboardList,
 } from "lucide-react";
 import {
-  estimate, DEVICE_LABELS, BRAND_LABELS, AGE_LABELS, faNum,
+  estimate, BRAND_LABELS, AGE_LABELS, faNum,
   getServicesForDevice, type DeviceCategory, type EstimatorInput,
 } from "@/lib/pricing";
 
@@ -39,10 +42,16 @@ const toEnglishDigits = (str: string): string => {
   return out;
 };
 
-// جداکننده هزارگان فارسی (٬) — نه کاما انگلیسی
 const formatThousands = (n: number): string => {
   if (!Number.isFinite(n)) return "";
   return n.toLocaleString("fa-IR");
+};
+
+// نگاشت DeviceCategory → مقادیر مجاز API (/api/requests)
+const DEVICE_TO_API: Record<DeviceCategory, "لپ‌تاپ" | "کامپیوتر (PC)" | "مک‌بوک"> = {
+  laptop: "لپ‌تاپ",
+  desktop: "کامپیوتر (PC)",
+  macbook: "مک‌بوک",
 };
 
 // ==================== Constants ====================
@@ -128,30 +137,24 @@ function FormattedNumberInput({
   min?: number;
   suffix?: string;
 }) {
-  // نمایش رشته‌ای فرمت‌شده (جدا از مقدار عددی)
   const [display, setDisplay] = useState<string>(
     value !== undefined && value !== null ? formatThousands(value) : ""
   );
 
-  // sync وقتی مقدار بیرونی تغییر می‌کند (reset)
   useEffect(() => {
     setDisplay(value !== undefined && value !== null ? formatThousands(value) : "");
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ۱) ارقام فارسی/عربی → انگلیسی
     const raw = toEnglishDigits(e.target.value);
-    // ۲) فقط رقم
     const digitsOnly = raw.replace(/[^0-9]/g, "");
 
-    // ۳) خالی
     if (digitsOnly === "") {
       setDisplay("");
       onChange(undefined);
       return;
     }
 
-    // ۴) تبدیل به عدد
     let num = parseInt(digitsOnly, 10);
     if (Number.isNaN(num)) {
       setDisplay("");
@@ -159,13 +162,10 @@ function FormattedNumberInput({
       return;
     }
 
-    // ۵) محدودیت‌ها
     if (min !== undefined && num < min) num = min;
     if (max !== undefined && num > max) num = max;
 
-    // ۶) نمایش فرمت‌شده
     setDisplay(formatThousands(num));
-    // ۷) مقدار خالص عددی به بیرون
     onChange(num);
   };
 
@@ -185,6 +185,167 @@ function FormattedNumberInput({
           {suffix}
         </span>
       )}
+    </div>
+  );
+}
+
+// ==================== Quick Request Form ====================
+function QuickRequestForm({
+  form,
+  estimateMin,
+  estimateMax,
+  serviceLabel,
+}: {
+  form: FormState;
+  estimateMin: number;
+  estimateMax: number;
+  serviceLabel: string;
+}) {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (sending) return;
+
+    if (name.trim().length < 2) {
+      toast.error("اسمت رو کامل بنویس");
+      return;
+    }
+    if (!/^09[0-9]{9}$/.test(phone)) {
+      toast.error("شماره موبایل باید با ۰۹ شروع بشه و ۱۱ رقم باشه");
+      return;
+    }
+
+    setSending(true);
+    const loadingToast = toast.loading("در حال ثبت درخواست...");
+
+    try {
+      // توضیحات خودکار از اطلاعات تخمین
+      const description = [
+        `تخمین اولیه: ${faNum(estimateMin)} تا ${faNum(estimateMax)} تومان`,
+        `برند: ${BRAND_LABELS[form.brand]}`,
+        `سن دستگاه: ${AGE_LABELS[form.age]}`,
+        `گارانتی: ${form.warranty === "yes" ? "دارد" : form.warranty === "no" ? "ندارد" : "نامشخص"}`,
+        form.deviceValue ? `ارزش دستگاه: ${faNum(form.deviceValue)} تومان` : null,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone,
+          deviceType: DEVICE_TO_API[form.device],
+          problem: serviceLabel,
+          description,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.ok === false) {
+        toast.error(data.error || "ثبت درخواست انجام نشد. دوباره تلاش کن.", {
+          id: loadingToast,
+        });
+        return;
+      }
+
+      toast.success("درخواستت ثبت شد!", { id: loadingToast });
+
+      const params = new URLSearchParams();
+      if (data.id) params.set("id", data.id);
+      params.set("phone", phone);
+      params.set("name", name.trim());
+      router.push(`/requests/success?${params.toString()}`);
+    } catch (err) {
+      console.error("Quick submit error:", err);
+      toast.error("خطای شبکه، اتصالت رو یه چک کن", { id: loadingToast });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-[28px] p-5 sm:p-6 border border-[#FF5722]/25 shadow-lg shadow-[#FF5722]/10">
+      <div className="flex items-start gap-2 mb-4">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#FF5722] to-[#FFA000] flex items-center justify-center flex-shrink-0">
+          <ClipboardList className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-black text-[#1A1410] mb-0.5">
+            همین حالا درخواستت رو ثبت کن
+          </h3>
+          <p className="text-[11px] text-[#1A1410]/50 leading-relaxed">
+            فقط اسم و شماره‌ت رو بده، بقیه‌ش با ما
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label className="flex items-center gap-1.5 text-[11px] font-bold text-[#1A1410]/70 mb-1.5">
+            <User className="w-3 h-3 text-[#FF5722]" />
+            اسم و فامیل <span className="text-[#FF5722]">*</span>
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="مثلاً علی رضایی"
+            autoComplete="name"
+            disabled={sending}
+            className="w-full bg-[#FFF9F5] border border-[#1A1410]/10 rounded-xl px-3.5 py-2.5 text-sm text-[#1A1410] placeholder:text-[#1A1410]/30 focus:outline-none focus:border-[#FF5722]/50 focus:ring-2 focus:ring-[#FF5722]/15 transition-all disabled:opacity-50"
+          />
+        </div>
+
+        <div>
+          <label className="flex items-center gap-1.5 text-[11px] font-bold text-[#1A1410]/70 mb-1.5">
+            <Phone className="w-3 h-3 text-[#FF5722]" />
+            شماره تماس <span className="text-[#FF5722]">*</span>
+          </label>
+          <input
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) =>
+              setPhone(toEnglishDigits(e.target.value).replace(/[^0-9]/g, "").slice(0, 11))
+            }
+            placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+            dir="ltr"
+            disabled={sending}
+            className="w-full bg-[#FFF9F5] border border-[#1A1410]/10 rounded-xl px-3.5 py-2.5 text-sm text-[#1A1410] placeholder:text-[#1A1410]/30 focus:outline-none focus:border-[#FF5722]/50 focus:ring-2 focus:ring-[#FF5722]/15 transition-all text-left disabled:opacity-50"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={sending}
+          className="group w-full inline-flex items-center justify-center gap-2 bg-gradient-to-l from-[#FF5722] to-[#FFA000] hover:from-[#F4511E] hover:to-[#FF8F00] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-full font-bold transition-all shadow-[0_8px_30px_rgba(255,87,34,0.3)] hover:shadow-[0_12px_40px_rgba(255,87,34,0.45)] py-3 text-sm"
+        >
+          {sending ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>در حال ثبت...</span>
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              <span>ثبت سریع درخواست</span>
+            </>
+          )}
+        </button>
+
+        <p className="text-center text-[10px] text-[#1A1410]/40 leading-relaxed">
+          با ثبت درخواست، کارشناس ما تماس می‌گیره و عیب‌یابی رایگانه
+        </p>
+      </form>
     </div>
   );
 }
@@ -222,19 +383,19 @@ export default function EstimatePage() {
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 px-3 sm:px-4 py-3 sm:py-4">
-        <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-xl shadow-lg shadow-[#FF5722]/10 rounded-full px-3 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between border border-[#FF5722]/15">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+        <div className="max-w-7xl mx-auto bg-white/90 backdrop-blur-xl shadow-lg shadow-[#FF5722]/10 rounded-full px-3 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between border border-[#FF5722]/15 gap-2">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 flex-shrink">
             <div className="relative w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
               <Image src="/logo.png" alt="مدفیکس شیراز" fill sizes="32px" className="object-contain" priority />
             </div>
-            <div className="h-4 sm:h-5 w-px bg-[#1A1410]/15 flex-shrink-0" />
-            <span className="text-[#1A1410]/60 text-[10px] sm:text-[11px] font-medium whitespace-nowrap tracking-wider group-hover:text-[#FF5722] transition-colors">
-              مدفیکس، تعمیرات تخصصی شیراز
+            <div className="h-4 sm:h-5 w-px bg-[#1A1410]/15 flex-shrink-0 hidden sm:block" />
+            <span className="text-[#1A1410]/60 text-[10px] sm:text-[11px] font-medium whitespace-nowrap tracking-wider group-hover:text-[#FF5722] transition-colors truncate">
+              مدفیکس شیراز
             </span>
           </Link>
           <Link
             href="/requests"
-            className="text-[#FF5722] text-xs sm:text-sm font-bold hover:text-[#F4511E] transition-colors"
+            className="text-[#FF5722] text-xs sm:text-sm font-bold hover:text-[#F4511E] transition-colors whitespace-nowrap flex-shrink-0"
           >
             درخواست تعمیر
           </Link>
@@ -249,8 +410,8 @@ export default function EstimatePage() {
           transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl sm:text-4xl font-black mb-3">هزینه تعمیرت رو حدس بزن</h1>
-          <p className="text-[#1A1410]/55 text-sm max-w-lg mx-auto leading-relaxed">
+          <h1 className="text-2xl sm:text-4xl font-black mb-3">هزینه تعمیرت رو حدس بزن</h1>
+          <p className="text-[#1A1410]/55 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed px-2">
             در ۳۰ ثانیه، بر اساس جدول قیمت میانه بازار، بازه هزینه تعمیر دستگاهت رو ببین
           </p>
         </motion.div>
@@ -270,7 +431,7 @@ export default function EstimatePage() {
               <h2 className="text-lg font-black mb-1">دستگاهت چیه؟</h2>
               <p className="text-xs text-[#1A1410]/50 mb-6">نوع دستگاه را انتخاب کن</p>
 
-              <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-6">
                 {DEVICES.map((d) => {
                   const Icon = d.icon;
                   const active = form.device === d.value;
@@ -278,15 +439,17 @@ export default function EstimatePage() {
                     <button
                       key={d.value}
                       onClick={() => setForm({ ...form, device: d.value })}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${
+                      className={`flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border transition-all ${
                         active
                           ? "bg-gradient-to-l from-[#FF5722] to-[#FFA000] text-white border-transparent shadow-lg shadow-[#FF5722]/25"
                           : "bg-[#FFF9F5] text-[#1A1410]/60 border-[#1A1410]/10 hover:border-[#FF5722]/40"
                       }`}
                     >
-                      <Icon className="w-7 h-7" />
-                      <span className="text-sm font-bold">{d.label}</span>
-                      <span className={`text-[10px] ${active ? "text-white/70" : "text-[#1A1410]/40"}`}>{d.desc}</span>
+                      <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                      <span className="text-xs sm:text-sm font-bold">{d.label}</span>
+                      <span className={`text-[9px] sm:text-[10px] text-center leading-tight ${active ? "text-white/70" : "text-[#1A1410]/40"}`}>
+                        {d.desc}
+                      </span>
                     </button>
                   );
                 })}
@@ -436,7 +599,7 @@ export default function EstimatePage() {
                 </div>
               </div>
 
-              {/* Device value — با فرمت هزارگان */}
+              {/* Device value */}
               <div>
                 <label className="block text-xs font-bold text-[#1A1410]/70 mb-2">
                   ارزش تقریبی دستگاه (اختیاری — برای خدمات درصدی)
@@ -537,9 +700,9 @@ function ResultStep({
           <div className="mb-6">
             <p className="text-[11px] text-white/70 mb-1">بازه قیمت</p>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-3xl sm:text-4xl font-black">{faNum(result.finalMin)}</span>
+              <span className="text-2xl sm:text-4xl font-black">{faNum(result.finalMin)}</span>
               <span className="text-lg text-white/70">تا</span>
-              <span className="text-3xl sm:text-4xl font-black">{faNum(result.finalMax)}</span>
+              <span className="text-2xl sm:text-4xl font-black">{faNum(result.finalMax)}</span>
               <span className="text-sm text-white/70">تومان</span>
             </div>
           </div>
@@ -563,6 +726,14 @@ function ResultStep({
         </div>
       </div>
 
+      {/* Quick Request Form — ثبت سریع از همین‌جا */}
+      <QuickRequestForm
+        form={form}
+        estimateMin={result.finalMin}
+        estimateMax={result.finalMax}
+        serviceLabel={result.service.label}
+      />
+
       {/* Notes */}
       <div className="bg-white rounded-[28px] p-5 border border-[#1A1410]/8">
         <div className="flex items-center gap-2 mb-3">
@@ -579,7 +750,7 @@ function ResultStep({
         </ul>
       </div>
 
-      {/* CTA */}
+      {/* CTA — فرم کامل (اختیاری) */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onReset}
@@ -589,10 +760,10 @@ function ResultStep({
         </button>
         <Link
           href="/requests"
-          className="py-3.5 rounded-xl bg-gradient-to-l from-[#FF5722] to-[#FFA000] text-white text-sm font-bold hover:from-[#F4511E] hover:to-[#FF8F00] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF5722]/25"
+          className="py-3.5 rounded-xl border border-[#FF5722]/40 text-[#FF5722] text-sm font-bold hover:bg-[#FF5722]/8 transition-all flex items-center justify-center gap-2"
         >
-          <Wrench className="w-4 h-4" />
-          ثبت درخواست
+          <ClipboardList className="w-4 h-4" />
+          فرم کامل
         </Link>
       </div>
 

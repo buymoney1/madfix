@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    const isAdmin = session?.user?.role === "admin";
+    const isAdmin = session?.user?.role === "ADMIN"; // ✅ حرف بزرگ
 
     if (!isAdmin && !isValidObjectId(session?.user?.id)) {
       return NextResponse.json({
@@ -123,7 +123,9 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
     const skip  = (page - 1) * limit;
 
-    const where = isAdmin ? {} : { userId: session!.user!.id };
+    const where: Record<string, unknown> = isAdmin
+      ? {}
+      : { userId: session!.user!.id };
 
     const [requests, total] = await Promise.all([
       prisma.repairRequest.findMany({
