@@ -4,6 +4,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import type { ComponentType } from "react";
+import InstagramIcon from "@/components/InstagramIcon";
 import {
   Apple,
   ArrowUpRight,
@@ -14,6 +16,7 @@ import {
   PenTool,
   Phone,
   Rocket,
+  Send,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -27,7 +30,33 @@ import {
 const NAV_LINKS = [
   { href: "#services", label: "خدمات" },
   { href: "/estimate", label: "تخمین هزینه" },
+  { href: "#contact", label: "تماس با ما" },
   { href: "/blog", label: "مقالات" },
+];
+
+interface SocialLink {
+  name: string;
+  handle: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  gradient: string;
+}
+
+const SOCIAL_LINKS: SocialLink[] = [
+  {
+    name: "اینستاگرام",
+    handle: "@madfix.ir",
+    href: "https://instagram.com/madfix.ir",
+    icon: InstagramIcon,
+    gradient: "from-[#F58529] via-[#DD2A7B] to-[#8134AF]",
+  },
+  {
+    name: "تلگرام",
+    handle: "@madfix_ir",
+    href: "https://t.me/madfix_ir",
+    icon: Send,
+    gradient: "from-[#229ED9] to-[#1C8AC0]",
+  },
 ];
 
 const SERVICES = [
@@ -267,18 +296,18 @@ export default function HomePage() {
             href="/"
             className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink"
           >
-            <div className="relative w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
+            <div className="relative w-7 h-7 sm:w-10 sm:h-10 flex-shrink-0">
               <Image
                 src="/logo.png"
                 alt="مدفیکس شیراز"
                 fill
-                sizes="32px"
+                sizes="40px"
                 className="object-contain"
                 unoptimized
               />
             </div>
-            <div className="h-4 sm:h-5 w-px bg-[#1A1410]/15 flex-shrink-0 hidden sm:block" />
-            <span className="text-[#1A1410]/60 text-[10px] sm:text-[11px] font-medium whitespace-nowrap tracking-wider truncate">
+            <div className="h-5 sm:h-6 w-px bg-[#1A1410]/15 flex-shrink-0 hidden sm:block" />
+            <span className="text-[#1A1410]/60 text-[11px] sm:text-[13px] font-medium whitespace-nowrap tracking-wider truncate">
               مدفیکس شیراز
             </span>
           </Link>
@@ -641,6 +670,56 @@ export default function HomePage() {
           </motion.div>
         </section>
 
+        <section
+          id="contact"
+          className="py-12 sm:py-16 px-4 max-w-5xl mx-auto w-full relative z-10 scroll-mt-24"
+        >
+          <SectionHeading
+            eyebrow="تماس با ما"
+            title="از شبکه‌های اجتماعی در ارتباط باش"
+            description="برای مشاوره سریع، پیگیری خدمات یا دیدن نمونه‌کارها از طریق اینستاگرام و تلگرام با تیم متخصص مدفیکس در تماس باش."
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-3xl mx-auto">
+            {SOCIAL_LINKS.map((social, index) => (
+              <motion.a
+                key={social.name}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.45, delay: index * 0.1 }}
+                whileHover={{ y: -4 }}
+                className="group bg-white rounded-3xl p-5 sm:p-6 border border-[#1A1410]/8 shadow-sm hover:shadow-xl hover:shadow-[#FF5722]/10 hover:border-[#FF5722]/30 transition-all flex items-center gap-4"
+              >
+                <div
+                  className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${social.gradient} flex items-center justify-center flex-shrink-0 shadow-lg`}
+                >
+                  <social.icon className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-bold text-[#1A1410]/45 mb-0.5">
+                    {social.name}
+                  </p>
+                  <p
+                    className="text-base font-black text-[#1A1410] truncate"
+                    dir="ltr"
+                  >
+                    {social.handle}
+                  </p>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-[#FF5722] flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </motion.a>
+            ))}
+          </div>
+
+          <p className="text-center text-[10px] sm:text-[11px] text-[#1A1410]/40 mt-5">
+            پاسخ‌گویی در ساعات کاری • شیراز، حضوری و مراجعه در محل
+          </p>
+        </section>
+
         <section className="py-10 sm:py-14 px-4 max-w-3xl mx-auto w-full relative z-10 text-center">
           <DecorativeCircle
             size={54}
@@ -718,6 +797,24 @@ export default function HomePage() {
           >
             درخواست خدمات
           </Link>
+          <span className="w-px h-3 bg-[#1A1410]/15" />
+          <a
+            href="https://instagram.com/madfix.ir"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#FF5722] transition-colors"
+          >
+            اینستاگرام
+          </a>
+          <span className="w-px h-3 bg-[#1A1410]/15" />
+          <a
+            href="https://t.me/madfix_ir"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#FF5722] transition-colors"
+          >
+            تلگرام
+          </a>
         </div>
       </footer>
     </div>

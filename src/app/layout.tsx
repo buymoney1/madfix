@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import FloatingContact from "@/components/FloatingContact";
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],
@@ -53,6 +54,7 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon.png", sizes: "512x512", type: "image/png" },
       { url: "/favicon.ico", sizes: "any" },
     ],
@@ -125,6 +127,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl" className={vazir.variable} suppressHydrationWarning>
       <body className="font-sans antialiased bg-[#FFF9F5] text-[#1A1410] selection:bg-[#FF5722] selection:text-white">
         {children}
+        <FloatingContact />
         <Toaster
           position="top-center"
           richColors

@@ -2,7 +2,6 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
   type ChangeEvent,
@@ -210,10 +209,6 @@ function FormattedNumberInput({
   const [display, setDisplay] = useState<string>(
     value !== undefined && value !== null ? formatThousands(value) : ""
   );
-
-  useEffect(() => {
-    setDisplay(value !== undefined && value !== null ? formatThousands(value) : "");
-  }, [value]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const raw = toEnglishDigits(event.target.value);
@@ -501,18 +496,18 @@ export default function EstimatePage() {
             href="/"
             className="flex items-center gap-2 sm:gap-3 group min-w-0 flex-shrink"
           >
-            <div className="relative w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
+            <div className="relative w-7 h-7 sm:w-10 sm:h-10 flex-shrink-0">
               <Image
                 src="/logo.png"
                 alt="مدفیکس شیراز"
                 fill
-                sizes="32px"
+                sizes="40px"
                 className="object-contain"
                 priority
               />
             </div>
-            <div className="h-4 sm:h-5 w-px bg-[#1A1410]/15 flex-shrink-0 hidden sm:block" />
-            <span className="text-[#1A1410]/60 text-[10px] sm:text-[11px] font-medium whitespace-nowrap tracking-wider group-hover:text-[#FF5722] transition-colors truncate">
+            <div className="h-5 sm:h-6 w-px bg-[#1A1410]/15 flex-shrink-0 hidden sm:block" />
+            <span className="text-[#1A1410]/60 text-[11px] sm:text-[13px] font-medium whitespace-nowrap tracking-wider group-hover:text-[#FF5722] transition-colors truncate">
               مدفیکس شیراز
             </span>
           </Link>

@@ -17,7 +17,7 @@
   ],
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
@@ -47,21 +47,21 @@
       "short_name": "تعمیر",
       "description": "ثبت درخواست تعمیر دستگاه",
       "url": "/requests",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "تخمین قیمت",
       "short_name": "قیمت",
       "description": "محاسبه حدودی هزینه تعمیر",
       "url": "/estimate",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "مقاله‌ها",
       "short_name": "مقالات",
       "description": "مقالات تخصصی تعمیرات",
       "url": "/blog",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
