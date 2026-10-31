@@ -61,16 +61,15 @@ const LAPTOP_SERVICES: ServiceItem[] = [
   { id: "webcam", label: "تعمیر یا تعویض وب‌کم", category: "laptop", range: { min: 550_000, max: 1_500_000 }, unit: "هر قطعه", keywords: ["وب کم"] },
   { id: "flat", label: "تعمیر و تعویض فلت", category: "laptop", range: { min: 775_000, max: 1_900_000 }, unit: "هر عدد", keywords: ["فلت"] },
   { id: "software", label: "رفع اشکالات نرم‌افزاری", category: "laptop", range: { min: 475_000, max: 1_350_000 }, unit: "هر دستگاه", keywords: ["نرم افزار", "ویندوز"] },
-  { id: "data-recovery", label: "بازیابی اطلاعات از دست رفته", category: "laptop", range: { min: 1_000_000, max: 7_000_000 }, unit: "هر عدد", keywords: ["بازیابی"] },
   { id: "win-install", label: "نصب ویندوز و درایور", category: "laptop", range: { min: 870_000, max: 1_150_000 }, unit: "هر سیستم", keywords: ["ویندوز"] },
-  { id: "linux-install", label: "نصب سیستم‌عامل مک، لینوکس و اوبونتو", category: "laptop", range: { min: 1_000_000, max: 2_000_000 }, unit: "هر سیستم", keywords: ["لینوکس"] },
+  { id: "linux-install", label: "نصب لینوکس و اوبونتو", category: "laptop", range: { min: 1_000_000, max: 2_000_000 }, unit: "هر سیستم", keywords: ["لینوکس"] },
+  { id: "macos-install", label: "نصب مک‌اواس و بهینه‌سازی", category: "laptop", range: { min: 1_200_000, max: 2_200_000 }, unit: "هر سیستم", keywords: ["مک", "macos"] },
   { id: "software-general", label: "نصب نرم‌افزارهای عمومی", category: "laptop", range: { min: 174_000, max: 230_000 }, unit: "هر نرم‌افزار", keywords: ["نصب نرم افزار"] },
   { id: "software-special", label: "نصب نرم‌افزارهای تخصصی", category: "laptop", range: { min: 348_000, max: 460_000 }, unit: "هر نرم‌افزار", keywords: ["نرم افزار تخصصی"] },
   { id: "virus-scan", label: "ویروس‌یابی و ویروس‌زدایی سیستم", category: "laptop", range: { min: 478_000, max: 633_000 }, unit: "هر سیستم", keywords: ["ویروس"] },
   { id: "antivirus", label: "نصب آنتی‌ویروس", category: "laptop", range: { min: 391_000, max: 517_000 }, unit: "هر سیستم", keywords: ["آنتی ویروس"] },
   { id: "peripheral-install", label: "نصب تجهیزات جانبی", category: "laptop", range: { min: 348_000, max: 460_000 }, unit: "هر دستگاه", keywords: ["پرینتر"] },
   { id: "transport", label: "ایاب و ذهاب", category: "laptop", range: { min: 261_000, max: 345_000 }, unit: "هر سرویس", keywords: ["ایاب"] },
-  { id: "hdd-hw-recovery", label: "ریکاوری هارد با مشکلات سخت‌افزاری", category: "laptop", range: { min: 1_000_000, max: 5_000_000 }, unit: "هر قطعه", keywords: ["ریکاوری"] },
   { id: "diagnosis-part-level", label: "عیب‌یابی در سطح تعویض قطعه", category: "laptop", range: { min: 522_000, max: 690_000 }, unit: "هر قطعه", keywords: ["عیب یابی"] },
   { id: "diagnosis-circuit-level", label: "عیب‌یابی در سطح تعمیرات مداری", category: "laptop", range: { min: 870_000, max: 1_150_000 }, unit: "هر قطعه", keywords: ["عیب یابی"] },
   { id: "bios-software", label: "پروگرام نرم‌افزاری بایوس", category: "laptop", range: { min: 500_000, max: 661_000 }, unit: "هر سیستم", keywords: ["بایوس"] },
@@ -104,7 +103,6 @@ const DESKTOP_SERVICES: ServiceItem[] = [
   { id: "case-repair", label: "تعمیر قاب", category: "desktop", range: { min: 500_000, max: 1_250_000 }, unit: "هر قطعه", keywords: ["قاب"] },
   { id: "gpu-repair", label: "تعمیر کارت گرافیک", category: "desktop", range: { minPercent: 15, maxPercent: 40 }, isPercentage: true, unit: "هر قطعه", keywords: ["گرافیک"] },
   { id: "led-lcd-repair", label: "تعمیر LED و LCD", category: "desktop", range: { minPercent: 20, maxPercent: 20 }, isPercentage: true, unit: "هر دستگاه", keywords: ["صفحه"] },
-  { id: "hdd-recovery", label: "بازیابی هارد", category: "desktop", range: { min: 1_000_000, max: 5_000_000 }, unit: "هر قطعه", keywords: ["بازیابی"] },
   { id: "open-close-case", label: "باز و بست کیس و مینی کیس", category: "desktop", range: { min: 435_000, max: 575_000 }, unit: "هر سیستم", keywords: ["باز کردن"] },
   { id: "open-close-aio", label: "باز و بست دستگاه آل این وان", category: "desktop", range: { min: 1_040_000, max: 1_380_000 }, unit: "هر دستگاه", keywords: ["آل این وان"] },
   { id: "assemble-normal", label: "اسمبل سیستم معمولی", category: "desktop", range: { min: 1_190_000, max: 1_580_000 }, unit: "هر سیستم", keywords: ["اسمبل"] },
@@ -117,10 +115,25 @@ const DESKTOP_SERVICES: ServiceItem[] = [
   { id: "win-install", label: "نصب ویندوز و درایور", category: "desktop", range: { min: 783_000, max: 1_030_000 }, unit: "هر سیستم", keywords: ["ویندوز"] },
   { id: "software-general", label: "نصب نرم‌افزارهای عمومی", category: "desktop", range: { min: 196_000, max: 259_000 }, unit: "هر نرم‌افزار", keywords: ["نصب نرم افزار"] },
   { id: "software-special", label: "نصب نرم‌افزارهای تخصصی", category: "desktop", range: { min: 348_000, max: 460_000 }, unit: "هر نرم‌افزار", keywords: ["نرم افزار تخصصی"] },
-  { id: "linux-install", label: "نصب مک، لینوکس و اوبونتو", category: "desktop", range: { min: 1_000_000, max: 1_700_000 }, unit: "هر سیستم", keywords: ["لینوکس"] },
+  { id: "linux-install", label: "نصب لینوکس و اوبونتو", category: "desktop", range: { min: 1_000_000, max: 1_700_000 }, unit: "هر سیستم", keywords: ["لینوکس"] },
+  { id: "macos-install", label: "نصب مک‌اواس و بهینه‌سازی", category: "desktop", range: { min: 1_200_000, max: 2_200_000 }, unit: "هر سیستم", keywords: ["مک", "macos"] },
   { id: "virus-scan", label: "ویروس‌یابی و ویروس‌زدایی", category: "desktop", range: { min: 435_000, max: 575_000 }, unit: "هر سیستم", keywords: ["ویروس"] },
   { id: "antivirus", label: "نصب آنتی‌ویروس", category: "desktop", range: { min: 370_000, max: 489_000 }, unit: "هر سیستم", keywords: ["آنتی ویروس"] },
   { id: "peripheral-install", label: "نصب تجهیزات جانبی", category: "desktop", range: { min: 304_000, max: 402_000 }, unit: "هر دستگاه", keywords: ["پرینتر"] },
+];
+
+// ===================================================================
+// ============== جدول خدمات مک =====================================
+// خدمات مک فقط شامل سرویس، اورهال و خنک‌کنندگی است؛ تعمیرات سخت‌افزاری ارائه نمی‌شود.
+// ===================================================================
+const MACBOOK_SERVICES: ServiceItem[] = [
+  { id: "mac-service", label: "سرویس و اورهال مک", category: "macbook", range: { min: 1_500_000, max: 3_200_000 }, unit: "هر دستگاه", keywords: ["اورهال", "سرویس مک"] },
+  { id: "fan-paste", label: "سرویس خنک‌کنندگی مک", category: "macbook", range: { min: 1_200_000, max: 2_600_000 }, unit: "هر سرویس", keywords: ["فن", "خنک", "خمیر"] },
+  { id: "mac-windows-install", label: "نصب ویندوز روی مک", category: "macbook", range: { min: 1_500_000, max: 2_800_000 }, unit: "هر سیستم", keywords: ["ویندوز", "بوت کمپ"] },
+  { id: "macos-install", label: "نصب و بازنشانی مک‌اواس", category: "macbook", range: { min: 1_200_000, max: 2_500_000 }, unit: "هر سیستم", keywords: ["مک", "macos"] },
+  { id: "linux-install", label: "نصب لینوکس روی مک", category: "macbook", range: { min: 1_500_000, max: 2_800_000 }, unit: "هر سیستم", keywords: ["لینوکس"] },
+  { id: "software", label: "نصب نرم‌افزارهای تخصصی مک", category: "macbook", range: { min: 600_000, max: 1_500_000 }, unit: "هر دستگاه", keywords: ["نرم افزار"] },
+  { id: "diagnosis", label: "بررسی و عیب‌یابی وضعیت مک", category: "macbook", range: { min: 800_000, max: 1_500_000 }, unit: "هر سرویس", keywords: ["عیب یابی"] },
 ];
 
 // ===================================================================
@@ -128,6 +141,7 @@ const DESKTOP_SERVICES: ServiceItem[] = [
 // ===================================================================
 export function getServicesForDevice(device: DeviceCategory): ServiceItem[] {
   if (device === "desktop") return DESKTOP_SERVICES;
+  if (device === "macbook") return MACBOOK_SERVICES;
   return LAPTOP_SERVICES;
 }
 
@@ -228,8 +242,9 @@ export function estimate(input: EstimatorInput): EstimatorResult {
 
   const notes: string[] = [
     "این تخمین بر اساس قیمت میانه بازار و جدول تعرفه مدفیکس است.",
-    "قیمت نهایی پس از عیب‌یابی دقیق توسط کارشناس مشخص می‌شود.",
+    "قیمت نهایی پس از عیب‌یابی دقیق توسط تیم متخصص مشخص می‌شود.",
     "قطعات مصرفی (مثل LCD، باتری، هارد) جدا از اجرت محاسبه می‌شوند.",
+    "در شیراز خدمات حضوری و مراجعه در محل انجام می‌شود؛ برای سایر شهرها دستگاه به شیراز ارسال می‌شود.",
   ];
   if (input.warranty === "yes") notes.push("با توجه به گارانتی، تخفیف ۱۰٪ اعمال شد.");
 

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@media (min-width: 1024px) {
+  html {
+    font-size: 125%;
+  }
+}
+
 @layer base {
   :root {
     --background: 40 30% 98%;

@@ -1,7 +1,7 @@
 {
   "name": "مدفیکس شیراز - تعمیرات تخصصی لپ‌تاپ و کامپیوتر",
   "short_name": "مدفیکس",
-  "description": "عیب‌یابی و تعمیر تخصصی لپ‌تاپ، کامپیوتر، مک‌بوک و بازیابی اطلاعات در شیراز — با ضمانت و قیمت شفاف.",
+  "description": "تیم متخصص تعمیرات لپ‌تاپ و کامپیوتر، خدمات مک، نصب ویندوز، لینوکس و مک‌اواس، طراحی سایت و برنامه‌نویسی در شیراز — حضوری، در محل مشتری و پذیرش ارسال از سراسر ایران.",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "/",
@@ -17,7 +17,7 @@
   ],
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
@@ -47,21 +47,21 @@
       "short_name": "تعمیر",
       "description": "ثبت درخواست تعمیر دستگاه",
       "url": "/requests",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "تخمین قیمت",
       "short_name": "قیمت",
       "description": "محاسبه حدودی هزینه تعمیر",
       "url": "/estimate",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "مقاله‌ها",
       "short_name": "مقالات",
       "description": "مقالات تخصصی تعمیرات",
       "url": "/blog",
-      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

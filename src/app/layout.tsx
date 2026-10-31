@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import FloatingContact from "@/components/FloatingContact";
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],
@@ -14,9 +15,9 @@ const vazir = Vazirmatn({
 // ─── Site Config ─────────────────────────────────────────────────────────────
 const SITE_URL = "https://medfixshiraz.ir"; // دامنه واقعی را جایگزین کن
 const SITE_NAME = "مدفیکس شیراز";
-const SITE_TITLE = "مدفیکس | تعمیرات تخصصی لپ‌تاپ و کامپیوتر در شیراز";
+const SITE_TITLE = "مدفیکس | تعمیرات تخصصی، نصب سیستم‌عامل و خدمات دیجیتال در شیراز";
 const SITE_DESCRIPTION =
-  "مدفیکس شیراز، مرکز تخصصی تعمیر لپ‌تاپ، کامپیوتر، مک‌بوک و هارد/SSD. عیب‌یابی رایگان، قطعات اصل، گارانتی خدمات و پشتیبانی سریع. همین حالا درخواست تعمیر ثبت کنید.";
+  "مدفیکس شیراز، تیم متخصص تعمیر لپ‌تاپ، کامپیوتر و خدمات مک؛ نصب ویندوز، لینوکس و مک‌اواس، نصب ویندوز روی مک، طراحی سایت و برنامه‌نویسی. خدمات حضوری در شیراز، مراجعه در محل و پذیرش ارسال از سراسر ایران.";
 
 // ─── Metadata ────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
@@ -32,9 +33,14 @@ export const metadata: Metadata = {
   keywords: [
     "تعمیر لپ تاپ شیراز",
     "تعمیر کامپیوتر شیراز",
-    "تعمیر مک بوک شیراز",
-    "تعمیر هارد و SSD",
-    "بازیابی اطلاعات شیراز",
+    "خدمات مک شیراز",
+    "سرویس و اورهال مک",
+    "نصب ویندوز روی مک",
+    "نصب ویندوز شیراز",
+    "نصب لینوکس شیراز",
+    "نصب مک او اس",
+    "طراحی سایت شیراز",
+    "برنامه نویسی شیراز",
     "تعمیر مادربرد",
     "تعمیرات تخصصی لپ تاپ",
     "مدفیکس",
@@ -48,6 +54,7 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon.png", sizes: "512x512", type: "image/png" },
       { url: "/favicon.ico", sizes: "any" },
     ],
@@ -67,7 +74,7 @@ export const metadata: Metadata = {
         url: "/og-image.png", // ترجیحاً 1200×630
         width: 1200,
         height: 630,
-        alt: "مدفیکس شیراز - تعمیرات تخصصی لپ‌تاپ",
+        alt: "مدفیکس شیراز - تعمیرات تخصصی و خدمات دیجیتال",
       },
     ],
   },
@@ -120,6 +127,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl" className={vazir.variable} suppressHydrationWarning>
       <body className="font-sans antialiased bg-[#FFF9F5] text-[#1A1410] selection:bg-[#FF5722] selection:text-white">
         {children}
+        <FloatingContact />
         <Toaster
           position="top-center"
           richColors
