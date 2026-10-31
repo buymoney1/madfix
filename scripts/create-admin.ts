@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 
 // ⚙️ تنظیمات ادمین
 const ADMIN = {
-  email: "madfix@gmail.ir",   // ایمیل ورود (می‌توانی عوض کنی)
-  password: "example",            // رمز عبور
+  email: "madfix@gmail.com",   // ایمیل ورود (می‌توانی عوض کنی)
+  password: "Madfix@123",            // رمز عبور
   name: "madfix",                    // نام نمایشی
 };
 

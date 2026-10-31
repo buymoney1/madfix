@@ -1,3 +1,4 @@
+// src/app/admin/layout.tsx
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminLayoutClient from "./AdminLayoutClient";
@@ -9,7 +10,12 @@ export default async function AdminLayout({
 }>) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "admin") {
+  // دیباگ موقت — بعد از حل مشکل حذف کن
+  console.log("🔍 admin layout session:", JSON.stringify(session, null, 2));
+
+  const role = (session?.user as any)?.role;
+
+  if (!session?.user || role !== "ADMIN") {
     redirect("/login");
   }
 
