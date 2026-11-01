@@ -3,6 +3,13 @@
 import { aiRouter } from "./ai-router";
 import { researchTopic, ResearchData } from "./serper-search";
 
+// ==================== Brand Constants ====================
+const BRAND_NAME = "مدفیکس";
+const BRAND_DOMAIN = "madfix.ir";
+const BRAND_TEAM = "تیم متخصص مدفیکس";
+const BRAND_CITY = "شیراز";
+const BRAND_SCOPE = "تعمیرات تخصصی لپ‌تاپ، کامپیوتر و بازیابی اطلاعات";
+
 // ==================== Types ====================
 interface ExtractedData {
   entities: string[];
@@ -29,16 +36,25 @@ export async function generateResearchedArticle(
   };
 }> {
   const articleTopic = topic || keywords.join(" - ");
-  console.log(`\n🚀 GENERATING: ${articleTopic}\n`);
+  console.log(`\n🚀 MADFIX GENERATING: ${articleTopic}\n`);
 
   const research = await doResearch(keywords);
   const extractedData = extractGenericData(research.competitorContents.join("\n"));
-  const { title, content, metaDescription } = await doGenerate(articleTopic, keywords, research, extractedData);
+  const { title, content, metaDescription } = await doGenerate(
+    articleTopic,
+    keywords,
+    research,
+    extractedData
+  );
 
-  console.log(`✅ "${title}" | ${research.sourcesScraped} src | ${countDataPoints(extractedData)} pts\n`);
+  console.log(
+    `✅ "${title}" | ${research.sourcesScraped} src | ${countDataPoints(extractedData)} pts\n`
+  );
 
   return {
-    title, content, metaDescription,
+    title,
+    content,
+    metaDescription,
     researchData: {
       sourcesFound: research.sourcesFound,
       sourcesScraped: research.sourcesScraped,
@@ -56,9 +72,14 @@ async function doResearch(keywords: string[]): Promise<ResearchData> {
   } catch (error: any) {
     console.error("Research failed:", error.message);
     return {
-      query: keywords.join(" "), sourcesFound: 0, sourcesScraped: 0,
-      competitorAnalysis: "", competitorContents: [], topResults: [],
-      relatedSearches: [], peopleAlsoAsk: [],
+      query: keywords.join(" "),
+      sourcesFound: 0,
+      sourcesScraped: 0,
+      competitorAnalysis: "",
+      competitorContents: [],
+      topResults: [],
+      relatedSearches: [],
+      peopleAlsoAsk: [],
     };
   }
 }
@@ -69,7 +90,13 @@ function emptyData(): ExtractedData {
 }
 
 function countDataPoints(d: ExtractedData): number {
-  return d.entities.length + d.numbersAndStats.length + d.moneyValues.length + d.quotes.length + d.contactInfo.length;
+  return (
+    d.entities.length +
+    d.numbersAndStats.length +
+    d.moneyValues.length +
+    d.quotes.length +
+    d.contactInfo.length
+  );
 }
 
 function unique(arr: string[]): string[] {
@@ -82,32 +109,50 @@ function extractGenericData(content: string): ExtractedData {
     return emptyData();
   }
 
-  console.log("📋 Extracting Generic Data...");
+  console.log("📋 Extracting repair-related data...");
 
-  // استخراج موجودیت‌های مهم (نام برندها، شرکت‌ها، محصولات، پلتفرم‌ها و...)
+  // موجودیت‌های مرتبط با تعمیرات: برند لپ‌تاپ، مدل، قطعه، نرم‌افزار
   const entities = unique([
-    ...content.matchAll(/(?:شرکت|برند|پلتفرم|محصول|نرم‌افزار|سایت|موسسه|سازمان|فناوری|مدل)\s+([آ-یa-zA-Z\s]{3,40})/gi)
-  ].map(m => m[1].trim())).slice(0, 15);
+    ...content.matchAll(
+      /(?:شرکت|برند|مدل|لپ‌تاپ|کامپیوتر|مادربرد|پردازنده|کارت\s+گرافیک|هارد|حافظه|پاور|باتری|نمایشگر|ویندوز|نرم‌افزار|ابزار|دستگاه)\s+([آ-یa-zA-Z0-9\s-]{3,40})/gi
+    ),
+  ]
+    .map((m) => m[1].trim())
+    .slice(0, 15);
 
-  // استخراج آمار، درصدها و اعداد مهم
+  // آمار و اعداد
   const numbersAndStats = unique([
-    ...content.matchAll(/(\d+[\d,./]*\s*(?:%|درصد|نفر|سال|ماه|روز|ساعت|کیلو|متر|برابر|میلیون|میلیارد))/gi)
-  ].map(m => m[0].trim())).slice(0, 15);
+    ...content.matchAll(
+      /(\d+[\d,./]*\s*(?:%|درصد|نفر|سال|ماه|روز|ساعت|گیگابایت|گیگ|ترابایت|مگاهرتز|وات|برابر|میلیون|میلیارد))/gi
+    ),
+  ]
+    .map((m) => m[0].trim())
+    .slice(0, 15);
 
-  // استخراج مبالغ و قیمت‌ها (در صورت وجود)
+  // مبالغ و هزینه‌های تعمیر
   const moneyValues = unique([
-    ...content.matchAll(/(\d+[\d,\/]*\s*(?:تومان|ریال|دلار|یورو|پوند|Toman|USD))/gi)
-  ].map(m => m[0].trim())).slice(0, 10);
+    ...content.matchAll(
+      /(\d+[\d,\/]*\s*(?:تومان|ریال|دلار|یورو|Toman|USD))/gi
+    ),
+  ]
+    .map((m) => m[0].trim())
+    .slice(0, 10);
 
-  // استخراج نقل قول‌ها و جملات برجسته
+  // نقل قول‌ها
   const quotes = unique([
-    ...content.matchAll(/["«]([^"«»]{15,150})["»]/g)
-  ].map(m => m[1].trim())).slice(0, 10);
+    ...content.matchAll(/["«]([^"«»]{15,150})["»]/g),
+  ]
+    .map((m) => m[1].trim())
+    .slice(0, 10);
 
-  // استخراج اطلاعات تماس (ایمیل، تلفن)
+  // اطلاعات تماس
   const contactInfo = unique([
-    ...content.matchAll(/(?:[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})|(?:09\d{9})|(?:\b\d{3,4}-\d{4,8}\b)/g)
-  ].map(m => m[0].trim())).slice(0, 5);
+    ...content.matchAll(
+      /(?:[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})|(?:09\d{9})|(?:\b\d{3,4}-\d{4,8}\b)/g
+    ),
+  ]
+    .map((m) => m[0].trim())
+    .slice(0, 5);
 
   const result = { entities, numbersAndStats, moneyValues, quotes, contactInfo };
   console.log(`   ✅ ${countDataPoints(result)} data points extracted.`);
@@ -126,13 +171,22 @@ async function doGenerate(
     .map((c, i) => `--- منبع ${i + 1} ---\n${c.slice(0, 5000)}`)
     .join("\n\n");
 
-  const prompt = buildPrompt(articleTopic, keywords, hasResearch, sourcesText, research, extractedData);
+  const prompt = buildPrompt(
+    articleTopic,
+    keywords,
+    hasResearch,
+    sourcesText,
+    research,
+    extractedData
+  );
 
-  console.log("✍️ Writing article...\n");
+  console.log("✍️ Writing madfix article...\n");
 
-  const result = await aiRouter.generateText(prompt, `Write about: ${articleTopic}`, {
-    temperature: 0.85, maxTokens: 12000,
-  });
+  const result = await aiRouter.generateText(
+    prompt,
+    `Write repair article for ${BRAND_NAME}: ${articleTopic}`,
+    { temperature: 0.85, maxTokens: 12000 }
+  );
 
   if (!result.success) throw new Error(result.error || "Generation failed");
 
@@ -155,25 +209,29 @@ function buildPrompt(
 
   let dataBlock = "";
   if (dp > 0) {
-    const formatList = (label: string, items: string[]) => items.length ? `**${label}:**\n${items.map((item, i) => `${i + 1}. ${item}`).join("\n")}\n\n` : "";
+    const formatList = (label: string, items: string[]) =>
+      items.length
+        ? `**${label}:**\n${items.map((item, i) => `${i + 1}. ${item}`).join("\n")}\n\n`
+        : "";
     dataBlock = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📦 داده‌های واقعی استخراج‌شده (${dp} مورد)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-این داده‌ها از بررسی رقبا به دست آمده‌اند تا محتوای تو دقیق و مستند باشد:
+این داده‌ها از بررسی منابع معتبر و رقبا به دست آمده‌اند تا محتوای تو دقیق و مستند باشد:
 
-${formatList("موجودیت‌های مرتبط (برندها، محصولات، و ...)", extractedData.entities)}
-${formatList("آمار و ارقام کلیدی", extractedData.numbersAndStats)}
-${formatList("مبالغ و هزینه‌ها", extractedData.moneyValues)}
+${formatList("مدل‌ها، قطعات و برندهای مرتبط", extractedData.entities)}
+${formatList("آمار و ارقام فنی", extractedData.numbersAndStats)}
+${formatList("مبالغ و هزینه‌های تعمیر", extractedData.moneyValues)}
 ${formatList("نقل قول‌ها و عبارات مهم", extractedData.quotes)}
 
-⚠️ **تکلیف اجباری:** 
-- در طول مقاله، از این آمار و نام‌ها به عنوان فکت‌های مستند استفاده کن تا اعتبار مقاله (E-E-A-T) بالا برود.
-- از اطلاعات ساختگی یا نام‌های فرضی مثل "شرکت الف" یا "سایت فلان" پرهیز کن.
+⚠️ **تکلیف اجباری:**
+- از این مدل‌ها و آمار به‌عنوان فکت مستند استفاده کن تا اعتبار مقاله (E-E-A-T) بالا برود.
+- از اطلاعات ساختگی یا نام‌های فرضی مثل «تعمیرگاه الف» یا «برند فلان» پرهیز کن.
 `;
   }
 
-  const researchBlock = hasResearch ? `
+  const researchBlock = hasResearch
+    ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 تحقیقات سئو و بررسی رقبا
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -181,11 +239,13 @@ ${formatList("نقل قول‌ها و عبارات مهم", extractedData.quotes
 ${sourcesText.slice(0, 25000)}
 
 **شکاف‌های محتوایی رقبا:** ${research.competitorAnalysis}
-**سوالات واقعی کاربران در گوگل:** ${research.peopleAlsoAsk.map(p => p.question).join(" | ") || "ندارد"}
+**سوالات واقعی کاربران در گوگل:** ${research.peopleAlsoAsk.map((p) => p.question).join(" | ") || "ندارد"}
 **جستجوهای مرتبط:** ${research.relatedSearches.join("، ") || "ندارد"}
-` : "";
+`
+    : "";
 
-  return `تو یک نویسنده ارشد فارسی‌زبان و استراتژیست سئو (SEO) هستی.
+  return `تو یک نویسنده‌ی ارشد فارسی‌زبان و متخصص حوزه‌ی تعمیرات لپ‌تاپ و کامپیوتر هستی.
+تو برای وب‌سایت رسمی «${BRAND_NAME}» (${BRAND_DOMAIN}) می‌نویسی — یک مرکز ${BRAND_SCOPE} در ${BRAND_CITY}.
 
 🎯 **ماموریت:** نوشتن یک مقاله جامع، مرجع و رتبه یک گوگل درباره موضوع: "${articleTopic}"
 کلمات کلیدی اصلی: ${keywords.join("، ")}
@@ -195,39 +255,59 @@ ${researchBlock}
 ${dataBlock}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔴 قوانین طلایی و استانداردهای محتوایی
+🏷️ قوانین معرفی برند «${BRAND_NAME}» (مهم — دقیق اجرا کن)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. برند را **حداکثر ۲ بار** در کل مقاله معرفی کن — نه بیشتر.
+2. معرفی باید **طبیعی و در بافت** باشد؛ مثلاً در بخش «چه زمانی به متخصص مراجعه کنیم» یا «نتیجه‌گیری».
+3. نمونه‌ی مجاز:
+   - «اگر مشکل ادامه‌دار بود، ${BRAND_TEAM} در ${BRAND_CITY} می‌تواند با عیب‌یابی دقیق، علت اصلی را پیدا کند.»
+   - «تشخیص نهایی نیاز به تجهیزات تخصصی دارد که ${BRAND_TEAM} در ${BRAND_DOMAIN} ارائه می‌دهد.»
+4. **هرگز** نگو «بهترین تعمیرگاه»، «با ما تماس بگیرید»، «تخفیف ویژه»، «بین‌ظیر».
+5. **هرگز** ادعای قیمت یا تخفیف خاص نکن.
+6. **هرگز** برندهای رقیب را نقد یا تحقیر نکن.
+7. لینک ${BRAND_DOMAIN} فقط **یک بار** و به‌شکل طبیعی در جمع‌بندی بیاور.
+8. اگر موضوع مقاله به تعمیر سخت‌افزار مربوط نیست، معرفی برند را حذف کن — نباید زورکی باشد.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 قوانین طلایی محتوا (تعمیرات)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-۱. **جامعیت و ارزش افزوده:**
-صرفاً حرف‌های رقبا را تکرار نکن. اطلاعات را ترکیب کن، ساختار بهتری به آن‌ها بده و شکاف‌های محتوایی را با زاویه دید جدید و توضیحات عمیق‌تر پر کن. به جای کلی‌گویی، مثال بزن و چرایی/چگونگی را توضیح بده.
+۱. **تجربه و تخصص (E-E-A-T):**
+مثل یک تعمیرکار باتجربه بنویس که سال‌ها دستگاه واقعی باز کرده. به جای کلی‌گویی، سناریوی واقعی بیاور:
+- «لپ‌تاپ ایسوس ویووبوک که بعد از آپدیت ویندوز بلواسکرین می‌دهد»
+- «هارد سیگیت که صدای تیک‌تیک می‌دهد و نشانه‌ی خرابی هد است»
+- «مادربرد HP که بعد از نوسان برق روشن نمی‌شود»
+از علائم، نشانه‌ها، و مراحل عیب‌یابی واقعی حرف بزن.
 
 ۲. **لحن و نگارش:**
-لحن باید حرفه‌ای، روان، قابل اعتماد و در عین حال صمیمی باشد. پاراگراف‌ها را کوتاه نگه دار (حداکثر ۳-۴ خط). از نیم‌فاصله‌های استاندارد فارسی استفاده کن. از عبارات پرکننده و حشو (مثل "همانطور که می‌دانید"، "شایان ذکر است") خودداری کن.
+لحن حرفه‌ای، روان، قابل‌اعتماد و صمیمی. پاراگراف‌ها کوتاه (حداکثر ۳-۴ خط). از نیم‌فاصله‌ی استاندارد فارسی استفاده کن. از عبارات پرکننده مثل «همانطور که می‌دانید» و «شایان ذکر است» پرهیز کن.
 
-۳. **ساختار حرفه‌ای HTML:**
-فقط و فقط کد HTML خالص تولید کن (بدون تگ‌های markdown مثل \`\`\`html).
-- <h1 class="text-3xl font-bold mb-6"> برای عنوان اصلی مقاله (فقط یک بار).
-- <h2 class="text-2xl font-semibold mt-8 mb-4"> برای بخش‌های اصلی.
-- <h3> برای زیرتیترها و سوالات متداول.
-- <p class="mb-4 leading-relaxed"> برای متن‌ها.
-- از <ul>, <ol>, <li> برای لیست‌ها استفاده کن تا خوانایی بالا برود.
-- از <strong> برای برجسته کردن مفاهیم کلیدی و از <blockquote> برای نقل قول‌ها استفاده کن.
-- از باکس‌های محتوایی استفاده کن: 
+۳. **ساختار HTML حرفه‌ای:**
+فقط HTML خالص تولید کن (بدون markdown).
+- <h1 class="text-3xl font-bold mb-6"> برای عنوان اصلی (فقط یک بار).
+- <h2 class="text-2xl font-semibold mt-8 mb-4"> برای بخش‌ها.
+- <h3> برای زیرتیترها و FAQ.
+- <p class="mb-4 leading-relaxed"> برای متن.
+- از <ul>, <ol>, <li> برای لیست‌ها.
+- از <strong> برای مفاهیم کلیدی و <blockquote> برای نقل قول.
+- باکس‌های محتوایی مخصوص تعمیرات:
   <div class="summary-box bg-gray-100 p-4 rounded-lg mb-6"> برای خلاصه مقاله
-  <div class="tip-box bg-amber-50 border-r-4 border-amber-500 p-4 my-4"> برای نکات طلایی
-  <div class="warning-box bg-red-50 border-r-4 border-red-500 p-4 my-4"> برای هشدارها
+  <div class="tip-box bg-amber-50 border-r-4 border-amber-500 p-4 my-4"> برای «نکته‌ی تعمیرکاری»
+  <div class="warning-box bg-red-50 border-r-4 border-red-500 p-4 my-4"> برای «هشدار خرابی جدی»
 
-۴. **سوالات متداول (FAQ):**
-در انتهای مقاله، حتماً یک بخش FAQ شامل سوالات واقعی کاربران (بر اساس داده‌های بالا) با پاسخ‌های دقیق و کاربردی (حداقل ۴ خط برای هر پاسخ) اضافه کن.
+۴. **بخش «چه زمانی به متخصص مراجعه کنیم»:**
+حتماً یک H2 با این عنوان یا مشابه داشته باش که علائم نیاز به متخصص را فهرست کند. اینجاست که معرفی برند به‌شکل طبیعی می‌گنجد (فقط یک بار).
 
-۵. **نتیجه‌گیری و دعوت به اقدام (CTA):**
-مقاله را با یک جمع‌بندی ساختاریافته، گام‌های عملی بعدی برای خواننده و یک سوال تعاملی برای ترغیب به کامنت‌گذاری به پایان برسان.
+۵. **سوالات متداول (FAQ):**
+در انتها یک بخش FAQ با سؤالات واقعی کاربران (از داده‌های بالا) و پاسخ دقیق (حداقل ۴ خط برای هر پاسخ) اضافه کن.
 
-۶. **طول مقاله:**
-حداقل ${hasResearch ? "۱۸۰۰" : "۱۲۰۰"} کلمه بنویس. کیفیت فدای کمیت نشود، اما تمام زوایای موضوع باید پوشش داده شود.
+۶. **نتیجه‌گیری و CTA:**
+جمع‌بندی ساختاریافته + گام‌های عملی بعدی + یک سؤال تعاملی برای ترغیب به کامنت. لینک ${BRAND_DOMAIN} فقط یک بار اینجا (اگر موضوع مرتبط بود).
 
-🚀 اکنون مقاله نهایی را به صورت HTML استایل‌دهی شده تولید کن.
-`;
+۷. **طول مقاله:**
+حداقل ${hasResearch ? "۱۸۰۰" : "۱۲۰۰"} کلمه. کیفیت فدای کمیت نشود، اما تمام زوایا پوشش داده شود.
+
+🚀 اکنون مقاله نهایی را به‌صورت HTML استایل‌دهی‌شده تولید کن.`;
 }
 
 // ==================== Helpers ====================

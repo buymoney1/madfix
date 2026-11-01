@@ -38,15 +38,22 @@ const MIN_H2 = 2;
 const MIN_P = 3;
 const MAX_SLUG_ATTEMPTS = 50;
 
+// برند رسمی (برای جلوگیری از محتوای ساختگی و برندهای جعلی)
+const BRAND_NAME = "مدفیکس";
+const BRAND_DOMAIN = "madfix.ir";
+const BRAND_TEAM = "تیم متخصص مدفیکس";
+
 // الگوهای محتوای ساختگی (برای رد کردن)
 const FAKE_PATTERNS: RegExp[] = [
-  /آموزشگاه\s+الف/i,
-  /آموزشگاه\s+ب/i,
-  /آموزشگاه\s+ج/i,
-  /\[نام\s+(?:آموزشگاه|شرکت|فروشگاه)\]/i,
+  /تعمیرگاه\s+الف/i,
+  /تعمیرگاه\s+ب/i,
+  /تعمیرگاه\s+ج/i,
+  /\[نام\s+(?:تعمیرگاه|شرکت|فروشگاه)\]/i,
   /\[(?:نام|آدرس|تلفن)\]/i,
   /lorem\s+ipsum/i,
   /XXX/,
+  /نمونه\s+متن/i,
+  /این\s+یک\s+متن\s+تستی\s+است/i,
 ];
 
 // ===================================================================
@@ -81,7 +88,7 @@ function sanitizeTitle(raw: string): string {
     .slice(0, 120);
 }
 
-/** ساخت slug از عنوان */
+/** ساخت slug از عنوان (با پشتیبانی از حروف فارسی → ترانسلیت ساده) */
 function buildSlug(title: string, providedSlug?: string): string {
   const base = (providedSlug || title || "")
     .toLowerCase()
@@ -91,7 +98,7 @@ function buildSlug(title: string, providedSlug?: string): string {
     .replace(/-+/g, "-")
     .slice(0, 80);
 
-  return base || `article-${Date.now().toString(36)}`;
+  return base || `madfix-article-${Date.now().toString(36)}`;
 }
 
 /** تولید slug یکتا با سقف تلاش */
@@ -110,7 +117,6 @@ async function ensureUniqueSlug(baseSlug: string): Promise<string> {
     counter++;
   }
 
-  // fallback نهایی
   return `${baseSlug}-${Date.now().toString(36)}`;
 }
 
@@ -157,16 +163,10 @@ function validateArticle(content: string, title: string): ValidationResult {
 // ===================================================================
 // ============== Duplicate Check ===================================
 // ===================================================================
-
-/**
- * بررسی می‌کند آیا مقاله‌ای با «دقیقاً همین مجموعه کلیدواژه» قبلاً ساخته شده.
- * (نه کمتر، نه بیشتر)
- */
 async function isExactMatchExists(keywords: string[]): Promise<boolean> {
   const sortedKeywords = normalizeKeywords(keywords);
   if (sortedKeywords.length === 0) return false;
 
-  // کوئری: مقالاتی که همه‌ی این کلیدواژه‌ها را دارند
   const candidates = await prisma.seoArticle.findMany({
     where: {
       keywords: { hasEvery: sortedKeywords },
@@ -197,7 +197,7 @@ async function logCronJob(params: {
   try {
     await prisma.cronJobLog.create({
       data: {
-        jobName: "auto-blogger",
+        jobName: "madfix-auto-blogger",
         status: params.status,
         details: params.details ? JSON.stringify(params.details) : null,
         error: params.error ?? null,
@@ -206,7 +206,6 @@ async function logCronJob(params: {
       },
     });
   } catch (logErr) {
-    // اگر لاگ هم شکست خورد، فقط چاپ کن (نباید کل جریان را بشکند)
     console.error("⚠️ Failed to write cron log:", logErr);
   }
 }
@@ -216,7 +215,7 @@ async function logCronJob(params: {
 // ===================================================================
 export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
   const startedAt = new Date();
-  console.log("\n🤖 AUTO BLOGGER\n");
+  console.log("\n🤖 MADFIX AUTO BLOGGER\n");
 
   const emptyResult = (error: string, extra?: Partial<AutoBlogResult>): AutoBlogResult => ({
     success: false,
@@ -230,12 +229,10 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
   });
 
   try {
-    // ---------------------------------------------------------------
-    // Step 1: بارگذاری همه‌ی گروه‌های فعال
-    // ---------------------------------------------------------------
+    // Step 1: بارگذاری گروه‌های فعال کلیدواژه
     const allPools = await prisma.keywordPool.findMany({
       where: { isActive: true },
-      orderBy: { updatedAt: "asc" }, // گروه‌هایی که دیرتر استفاده شده‌اند اول
+      orderBy: { updatedAt: "asc" },
       select: { id: true, name: true, keywords: true, category: true },
     });
 
@@ -243,11 +240,9 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
       return emptyResult("هیچ گروه کلیدواژه فعالی وجود ندارد");
     }
 
-    // ---------------------------------------------------------------
-    // Step 2: انتخاب گروه بدون مقاله (با shuffle برای تنوع)
-    // ---------------------------------------------------------------
+    // Step 2: انتخاب گروه بدون مقاله
     const shuffled = [...allPools].sort(() => Math.random() - 0.5);
-    console.log(`🔍 Scanning ${shuffled.length} pools for fresh topics...\n`);
+    console.log(`🔍 Scanning ${shuffled.length} pools for fresh repair topics...\n`);
 
     let selectedPool: typeof allPools[number] | null = null;
 
@@ -272,9 +267,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
     }
 
     if (!selectedPool) {
-      return emptyResult("همه گروه‌ها مقاله دارند — مقاله جدیدی برای تولید نیست", {
-        passedValidation: false,
-      });
+      return emptyResult("همه گروه‌ها مقاله دارند — مقاله جدیدی برای تولید نیست");
     }
 
     const pool = selectedPool;
@@ -284,10 +277,8 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
     console.log(`📦 Selected: "${pool.name}"`);
     console.log(`🎯 Keywords (${keywords.length}): ${keywords.join(" | ")}\n`);
 
-    // ---------------------------------------------------------------
-    // Step 3: تولید مقاله
-    // ---------------------------------------------------------------
-    console.log("✍️ Generating article...");
+    // Step 3: تولید مقاله (با زمینه تعمیرات + برند مدفیکس)
+    console.log(`✍️ Generating repair article for ${BRAND_NAME}...`);
     let generated: GeneratedArticle;
     try {
       generated = await generateResearchedArticle(keywords, topic);
@@ -296,7 +287,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
       await logCronJob({
         status: "failed",
         error: `Generation failed: ${message}`,
-        details: { pool: pool.name, keywords },
+        details: { pool: pool.name, keywords, brand: BRAND_NAME },
         startedAt,
       });
       return emptyResult(`خطا در تولید مقاله: ${message}`, {
@@ -308,9 +299,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
     const title = sanitizeTitle(generated.title);
     const content = generated.content;
 
-    // ---------------------------------------------------------------
     // Step 4: اعتبارسنجی
-    // ---------------------------------------------------------------
     console.log("🔍 Validating...");
     const validation = validateArticle(content, title);
     const wordCount = countWords(content);
@@ -338,9 +327,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
       };
     }
 
-    // ---------------------------------------------------------------
     // Step 5: SEO metadata
-    // ---------------------------------------------------------------
     console.log("🎯 Generating SEO metadata...");
     let seoData: Awaited<ReturnType<typeof generateSEOMetadata>> = {} as never;
     try {
@@ -349,15 +336,11 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
       console.warn("⚠️ SEO metadata generation failed, using fallbacks:", seoErr);
     }
 
-    // ---------------------------------------------------------------
     // Step 6: Slug یکتا
-    // ---------------------------------------------------------------
     const baseSlug = buildSlug(title, seoData?.slug);
     const slug = await ensureUniqueSlug(baseSlug);
 
-    // ---------------------------------------------------------------
-    // Step 7: ذخیره (publish)
-    // ---------------------------------------------------------------
+    // Step 7: ذخیره
     console.log("📤 Publishing article...");
     const article = await prisma.seoArticle.create({
       data: {
@@ -371,7 +354,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
         ogDescription: seoData?.metaDescription || "",
         keywords,
         tags: seoData?.tags?.length ? seoData.tags : keywords.slice(0, 5),
-        category: seoData?.category || pool.category || keywords[0] || "عمومی",
+        category: seoData?.category || pool.category || keywords[0] || "تعمیرات",
         wordCount,
         readingTime:
           seoData?.readingTime || Math.max(1, Math.ceil(wordCount / 200)),
@@ -380,9 +363,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
       },
     });
 
-    // ---------------------------------------------------------------
-    // Step 8: بروزرسانی گروه (چرخش منصفانه)
-    // ---------------------------------------------------------------
+    // Step 8: بروزرسانی گروه
     try {
       await prisma.keywordPool.update({
         where: { id: pool.id },
@@ -392,9 +373,7 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
       console.warn("⚠️ Failed to update pool timestamp:", updErr);
     }
 
-    // ---------------------------------------------------------------
     // Step 9: لاگ موفقیت
-    // ---------------------------------------------------------------
     await logCronJob({
       status: "success",
       details: {
@@ -403,12 +382,14 @@ export async function autoGenerateAndPublish(): Promise<AutoBlogResult> {
         pool: pool.name,
         keywords,
         wordCount,
+        brand: BRAND_NAME,
+        domain: BRAND_DOMAIN,
       },
       startedAt,
     });
 
     console.log(`\n✅ Published: ${article.slug} (${wordCount} words)`);
-    console.log(`📦 Pool: "${pool.name}" is now covered\n`);
+    console.log(`📦 Pool: "${pool.name}" covered by ${BRAND_TEAM}\n`);
 
     return {
       success: true,
