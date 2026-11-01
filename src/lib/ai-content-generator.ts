@@ -8,7 +8,7 @@ const BRAND_NAME = "مدفیکس";
 const BRAND_DOMAIN = "madfix.ir";
 const BRAND_TEAM = "تیم متخصص مدفیکس";
 const BRAND_CITY = "شیراز";
-const BRAND_SCOPE = "تعمیرات تخصصی لپ‌تاپ، کامپیوتر و بازیابی اطلاعات";
+const BRAND_SCOPE = "تعمیرات تخصصی لپ‌تاپ، کامپیوتر";
 
 // ==================== Types ====================
 interface ExtractedData {
@@ -86,7 +86,13 @@ async function doResearch(keywords: string[]): Promise<ResearchData> {
 
 // ==================== Generic Data Extraction ====================
 function emptyData(): ExtractedData {
-  return { entities: [], numbersAndStats: [], moneyValues: [], quotes: [], contactInfo: [] };
+  return {
+    entities: [],
+    numbersAndStats: [],
+    moneyValues: [],
+    quotes: [],
+    contactInfo: [],
+  };
 }
 
 function countDataPoints(d: ExtractedData): number {
@@ -112,47 +118,50 @@ function extractGenericData(content: string): ExtractedData {
   console.log("📋 Extracting repair-related data...");
 
   // موجودیت‌های مرتبط با تعمیرات: برند لپ‌تاپ، مدل، قطعه، نرم‌افزار
-  const entities = unique([
+  const entityMatches = [
     ...content.matchAll(
       /(?:شرکت|برند|مدل|لپ‌تاپ|کامپیوتر|مادربرد|پردازنده|کارت\s+گرافیک|هارد|حافظه|پاور|باتری|نمایشگر|ویندوز|نرم‌افزار|ابزار|دستگاه)\s+([آ-یa-zA-Z0-9\s-]{3,40})/gi
     ),
-  ]
-    .map((m) => m[1].trim())
-    .slice(0, 15);
+  ];
+  const entities = unique(
+    entityMatches.map((m) => m[1].trim()).slice(0, 15)
+  );
 
   // آمار و اعداد
-  const numbersAndStats = unique([
+  const statMatches = [
     ...content.matchAll(
       /(\d+[\d,./]*\s*(?:%|درصد|نفر|سال|ماه|روز|ساعت|گیگابایت|گیگ|ترابایت|مگاهرتز|وات|برابر|میلیون|میلیارد))/gi
     ),
-  ]
-    .map((m) => m[0].trim())
-    .slice(0, 15);
+  ];
+  const numbersAndStats = unique(
+    statMatches.map((m) => m[0].trim()).slice(0, 15)
+  );
 
   // مبالغ و هزینه‌های تعمیر
-  const moneyValues = unique([
+  const moneyMatches = [
     ...content.matchAll(
       /(\d+[\d,\/]*\s*(?:تومان|ریال|دلار|یورو|Toman|USD))/gi
     ),
-  ]
-    .map((m) => m[0].trim())
-    .slice(0, 10);
+  ];
+  const moneyValues = unique(
+    moneyMatches.map((m) => m[0].trim()).slice(0, 10)
+  );
 
   // نقل قول‌ها
-  const quotes = unique([
-    ...content.matchAll(/["«]([^"«»]{15,150})["»]/g),
-  ]
-    .map((m) => m[1].trim())
-    .slice(0, 10);
+  const quoteMatches = [...content.matchAll(/["«]([^"«»]{15,150})["»]/g)];
+  const quotes = unique(
+    quoteMatches.map((m) => m[1].trim()).slice(0, 10)
+  );
 
   // اطلاعات تماس
-  const contactInfo = unique([
+  const contactMatches = [
     ...content.matchAll(
       /(?:[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})|(?:09\d{9})|(?:\b\d{3,4}-\d{4,8}\b)/g
     ),
-  ]
-    .map((m) => m[0].trim())
-    .slice(0, 5);
+  ];
+  const contactInfo = unique(
+    contactMatches.map((m) => m[0].trim()).slice(0, 5)
+  );
 
   const result = { entities, numbersAndStats, moneyValues, quotes, contactInfo };
   console.log(`   ✅ ${countDataPoints(result)} data points extracted.`);
@@ -211,8 +220,11 @@ function buildPrompt(
   if (dp > 0) {
     const formatList = (label: string, items: string[]) =>
       items.length
-        ? `**${label}:**\n${items.map((item, i) => `${i + 1}. ${item}`).join("\n")}\n\n`
+        ? `**${label}:**\n${items
+            .map((item, i) => `${i + 1}. ${item}`)
+            .join("\n")}\n\n`
         : "";
+
     dataBlock = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📦 داده‌های واقعی استخراج‌شده (${dp} مورد)
@@ -239,7 +251,9 @@ ${formatList("نقل قول‌ها و عبارات مهم", extractedData.quotes
 ${sourcesText.slice(0, 25000)}
 
 **شکاف‌های محتوایی رقبا:** ${research.competitorAnalysis}
-**سوالات واقعی کاربران در گوگل:** ${research.peopleAlsoAsk.map((p) => p.question).join(" | ") || "ندارد"}
+**سوالات واقعی کاربران در گوگل:** ${
+        research.peopleAlsoAsk.map((p) => p.question).join(" | ") || "ندارد"
+      }
 **جستجوهای مرتبط:** ${research.relatedSearches.join("، ") || "ندارد"}
 `
     : "";
@@ -262,7 +276,7 @@ ${dataBlock}
 3. نمونه‌ی مجاز:
    - «اگر مشکل ادامه‌دار بود، ${BRAND_TEAM} در ${BRAND_CITY} می‌تواند با عیب‌یابی دقیق، علت اصلی را پیدا کند.»
    - «تشخیص نهایی نیاز به تجهیزات تخصصی دارد که ${BRAND_TEAM} در ${BRAND_DOMAIN} ارائه می‌دهد.»
-4. **هرگز** نگو «بهترین تعمیرگاه»، «با ما تماس بگیرید»، «تخفیف ویژه»، «بین‌ظیر».
+4. **هرگز** نگو «بهترین تعمیرگاه»، «با ما تماس بگیرید»، «تخفیف ویژه»، «بی‌نظیر».
 5. **هرگز** ادعای قیمت یا تخفیف خاص نکن.
 6. **هرگز** برندهای رقیب را نقد یا تحقیر نکن.
 7. لینک ${BRAND_DOMAIN} فقط **یک بار** و به‌شکل طبیعی در جمع‌بندی بیاور.
